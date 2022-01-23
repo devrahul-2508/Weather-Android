@@ -1,6 +1,6 @@
 # Weather
 
-A simple app to demonstrate pair-programming over JetBrain's [CodeWithMe](https://www.jetbrains.com/code-with-me/) plugin
+A simple app to show some weather info
 
 ## The plan
 
@@ -12,10 +12,5 @@ We are keeping it simple! The plan is to recreate the following UI (courtesy of 
 We will be consuming data straight from OpenWeatherMap API. For this particular screen we will only need [geo endpoint](https://openweathermap.org/current#geo)
 API key can be found in `app/build.gradle.kts` already configured as `API_KEY`
 
-### Architecture 
-Whatever your ❤️ desire!
-
-### Task breakdown
-1. Create a web service to integrate with OpenWeatherMap API
-2. Create UI as specified by the design
-3. Get the data from the webservice and display on the UI
+### License
+This project is copyright (C) Motorola Solutions Pty. Ltd. 2022.
