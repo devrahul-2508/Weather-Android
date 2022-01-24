@@ -5,13 +5,19 @@ A simple app to show some weather info
 ## Design
 
 Design courtesy of [Muhammad Noufal](https://dribbble.com/muhammad_noufal))
+
 <img src="artwork/paid-flavour.png" width="360"/>
 
 ## Data
 
-We will be consuming data straight from OpenWeatherMap API. For this particular screen we will only
-need [geo endpoint](https://openweathermap.org/current#geo)
-API key can be found in `app/build.gradle.kts` already configured as `API_KEY`
+We are consuming data straight from OpenWeatherMap API. We are making use
+of [geo endpoint](https://openweathermap.org/current#geo).
+
+API key configured as `API_KEY` in `BuildConfig`. Make sure to set `apiKey` in `local.properties`
+
+```groovy
+api_key="<API KEY HERE>"
+```
 
 ## License
 
