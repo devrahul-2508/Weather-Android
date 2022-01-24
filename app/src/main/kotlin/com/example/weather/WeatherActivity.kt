@@ -63,6 +63,8 @@ class WeatherActivity : AppCompatActivity(), CoroutineScope {
 
   private val webService: WeatherWebService = retrofit.create()
 
+  private val dateTimeFormatter = DateTimeFormatter.ofPattern(" E',' dd MMMM")
+
   override val coroutineContext: CoroutineContext = Dispatchers.IO + SupervisorJob()
 
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -80,17 +82,16 @@ class WeatherActivity : AppCompatActivity(), CoroutineScope {
         progressBar.isVisible = true
       }
 
-      // TODO: Get user's location
       // TODO: Handle network failure
       val currentWeatherResponse: CurrentWeatherResponse =
+        // TODO: Get user's location
         webService.getCurrentWeatherForLocation("-37.8197304", "144.9516833")
 
       val condition: WeatherCondition = currentWeatherResponse.weather.first()
       val locationName: String = currentWeatherResponse.name
       val conditionIcon: Drawable = getIcon(this@WeatherActivity, condition.id)
       val conditionTitle: String = condition.main
-      // TODO: Use the correct date format
-      val conditionDate: String = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
+      val conditionDate: String = LocalDateTime.now().format(dateTimeFormatter)
       val conditionTemp: String = "${currentWeatherResponse.main.temp.toInt()}°"
       val windSpeedText = "${currentWeatherResponse.wind.speed} m/s"
       val feelsLikeText = "${currentWeatherResponse.main.feels_like} °"
@@ -114,7 +115,9 @@ class WeatherActivity : AppCompatActivity(), CoroutineScope {
         pressureTextView.text = pressureText
       }
 
+      // TODO: Handle network failure
       val forecastResponse: HourlyForecastResponse =
+        // TODO: Get user's location
         webService.getHourlyForecastForLocation("-37.8197304", "144.9516833")
 
       withContext(Dispatchers.Main) {
