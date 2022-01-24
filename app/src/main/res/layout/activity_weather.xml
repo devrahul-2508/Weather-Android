@@ -8,7 +8,6 @@
     tools:context=".WeatherActivity"
     android:orientation="vertical"
     android:layout_margin="16dp"
-    android:gravity="center"
     android:animateLayoutChanges="true">
 
   <TextView
@@ -38,7 +37,6 @@
         android:id="@+id/weather_progressBar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
     />
 
     <LinearLayout
@@ -178,6 +176,7 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/weather_humidityLayout"
             android:layout_columnWeight="1"
             android:layout_rowWeight="1"
             android:background="@drawable/border"
@@ -217,6 +216,7 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/weather_pressureLayout"
             android:layout_columnWeight="1"
             android:layout_rowWeight="1"
             android:background="@drawable/border"
@@ -261,4 +261,18 @@
 
   </androidx.cardview.widget.CardView>
 
+  <TextView
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/weather_todayTitle"
+      android:textAppearance="?textAppearanceSubtitle1"
+  />
+
+  <androidx.recyclerview.widget.RecyclerView
+      android:id="@+id/weather_forecast_list"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="horizontal"
+      tools:listitem="@layout/weather_forcast_item"
+  />
 </LinearLayout>

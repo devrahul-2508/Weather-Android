@@ -1,14 +1,19 @@
 package com.example.weather
 
+import android.annotation.SuppressLint
+import android.content.Context
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.annotation.DrawableRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.weather.BuildConfig.API_BASE_URL
-import com.example.weather.WeatherResponse.WeatherCondition
+import com.example.weather.HourlyForecastResponse.HourlyForecast
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.CoroutineScope
@@ -17,6 +22,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
+import okhttp3.logging.HttpLoggingInterceptor.Logger
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import retrofit2.create
@@ -34,10 +41,15 @@ class WeatherActivity : AppCompatActivity(), CoroutineScope {
   private val conditionTemperatureView: TextView by lazy { findViewById(R.id.weather_conditionTemperature) }
   private val windSpeedTextView: TextView by lazy { findViewById(R.id.weather_windSpeed) }
   private val feelsLikeTextView: TextView by lazy { findViewById(R.id.weather_feelsLike) }
+  private val humidityLayout: LinearLayout by lazy { findViewById(R.id.weather_humidityLayout) }
   private val humidityTextView: TextView by lazy { findViewById(R.id.weather_humidity) }
+  private val pressureLayout: LinearLayout by lazy { findViewById(R.id.weather_pressureLayout) }
   private val pressureTextView: TextView by lazy { findViewById(R.id.weather_pressure) }
+  private val forecastRecyclerView: RecyclerView by lazy { findViewById(R.id.weather_forecast_list) }
 
-  private val httpClient: OkHttpClient = OkHttpClient.Builder().build()
+  private val httpClient: OkHttpClient = OkHttpClient.Builder()
+    .addInterceptor(HttpLoggingInterceptor(logger = Logger.DEFAULT))
+    .build()
 
   private val moshiConverter: Moshi = Moshi.Builder()
     .add(KotlinJsonAdapterFactory())
@@ -70,44 +82,75 @@ class WeatherActivity : AppCompatActivity(), CoroutineScope {
 
       // TODO: Get user's location
       // TODO: Handle network failure
-      val response: WeatherResponse = webService.getWeatherForLocation("-37.8197304", "144.9516833")
+      val currentWeatherResponse: CurrentWeatherResponse =
+        webService.getCurrentWeatherForLocation("-37.8197304", "144.9516833")
 
-      val condition: WeatherCondition = response.weather.first()
-
-      @DrawableRes val conditionDrawable: Int = when {
-        condition.id.startsWith("2") -> R.drawable.ic_weather_2xx
-        condition.id.startsWith("3") -> R.drawable.ic_weather_3xx
-        condition.id.startsWith("5") -> R.drawable.ic_weather_5xx
-        condition.id.startsWith("6") -> R.drawable.ic_weather_6xx
-        condition.id.startsWith("7") -> R.drawable.ic_weather_7xx
-        condition.id.startsWith("8") -> R.drawable.ic_weather_8xx
-        else -> R.drawable.ic_weather_801
-      }
-
-      val locationName: String = response.name
+      val condition: WeatherCondition = currentWeatherResponse.weather.first()
+      val locationName: String = currentWeatherResponse.name
+      val conditionIcon: Drawable = getIcon(this@WeatherActivity, condition.id)
       val conditionTitle: String = condition.main
       // TODO: Use the correct date format
       val conditionDate: String = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
-      val conditionTemp: String = "${response.main.temp.toInt()}°"
-      val windSpeedText = "${response.wind.speed} m/s"
-      val feelsLikeText = "${response.main.feels_like} °"
-      val humidityText = "${response.main.humidity} %"
-      val pressureText = "${response.main.pressure} hPa"
+      val conditionTemp: String = "${currentWeatherResponse.main.temp.toInt()}°"
+      val windSpeedText = "${currentWeatherResponse.wind.speed} m/s"
+      val feelsLikeText = "${currentWeatherResponse.main.feels_like} °"
+      val humidityText = "${currentWeatherResponse.main.humidity} %"
+      val pressureText = "${currentWeatherResponse.main.pressure} hPa"
 
       withContext(Dispatchers.Main) {
         locationText.isVisible = true
         conditionView.isVisible = true
         progressBar.isVisible = false
         locationText.text = locationName
-        conditionImageView.setImageResource(conditionDrawable)
+        conditionImageView.setImageDrawable(conditionIcon)
         conditionTitleView.text = conditionTitle
         conditionDateView.text = conditionDate
         conditionTemperatureView.text = conditionTemp
         windSpeedTextView.text = windSpeedText
         feelsLikeTextView.text = feelsLikeText
+        humidityLayout.isVisible = !BuildConfig.IS_LITE
+        pressureLayout.isVisible = !BuildConfig.IS_LITE
         humidityTextView.text = humidityText
-        pressureTextView.text = humidityText
+        pressureTextView.text = pressureText
       }
+
+      val forecastResponse: HourlyForecastResponse =
+        webService.getHourlyForecastForLocation("-37.8197304", "144.9516833")
+
+      withContext(Dispatchers.Main) {
+        val fullForecast: List<HourlyForecast> = forecastResponse.hourly
+        val liteForecast: List<HourlyForecast> = fullForecast.take(5)
+        val forecast: List<HourlyForecast> = if (BuildConfig.IS_LITE) liteForecast else fullForecast
+        val adapter = WeatherArrayAdapter(forecast)
+
+        val layoutManager = LinearLayoutManager(applicationContext)
+        layoutManager.orientation = LinearLayoutManager.HORIZONTAL
+        forecastRecyclerView.layoutManager = layoutManager
+        forecastRecyclerView.adapter = adapter
+      }
+    }
+  }
+
+  companion object {
+    internal var iconCache: MutableMap<String, Drawable?> = mutableMapOf()
+
+    @SuppressLint("UseCompatLoadingForDrawables")
+    fun getIcon(context: Context, id: String): Drawable {
+      val cachedIcon: Drawable? = iconCache[id]
+      if (cachedIcon != null) return cachedIcon
+
+      val conditionDrawable: Drawable? = when {
+        id.startsWith("2") -> context.getDrawable(R.drawable.ic_weather_2xx)
+        id.startsWith("3") -> context.getDrawable(R.drawable.ic_weather_3xx)
+        id.startsWith("5") -> context.getDrawable(R.drawable.ic_weather_5xx)
+        id.startsWith("6") -> context.getDrawable(R.drawable.ic_weather_6xx)
+        id.startsWith("7") -> context.getDrawable(R.drawable.ic_weather_7xx)
+        id.startsWith("8") -> context.getDrawable(R.drawable.ic_weather_8xx)
+        else -> context.getDrawable(R.drawable.ic_weather_801)
+      }
+
+      iconCache[id] = conditionDrawable
+      return requireNotNull(conditionDrawable)
     }
   }
 }
