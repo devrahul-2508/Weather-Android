@@ -18,9 +18,7 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import okhttp3.logging.HttpLoggingInterceptor.Logger
@@ -65,7 +63,7 @@ class WeatherActivity : AppCompatActivity(), CoroutineScope {
 
   private val dateTimeFormatter = DateTimeFormatter.ofPattern(" E',' dd MMMM")
 
-  override val coroutineContext: CoroutineContext = Dispatchers.IO + SupervisorJob()
+  override val coroutineContext: CoroutineContext = Dispatchers.Main
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -75,13 +73,11 @@ class WeatherActivity : AppCompatActivity(), CoroutineScope {
   override fun onStart() {
     super.onStart()
 
-    launch {
-      withContext(Dispatchers.Main) {
-        locationText.isVisible = false
-        conditionView.isVisible = false
-        progressBar.isVisible = true
-      }
+    locationText.isVisible = false
+    conditionView.isVisible = false
+    progressBar.isVisible = true
 
+    launch {
       // TODO: Handle network failure
       val currentWeatherResponse: CurrentWeatherResponse =
         // TODO: Get user's location
@@ -98,47 +94,43 @@ class WeatherActivity : AppCompatActivity(), CoroutineScope {
       val humidityText = "${currentWeatherResponse.main.humidity} %"
       val pressureText = "${currentWeatherResponse.main.pressure} hPa"
 
-      withContext(Dispatchers.Main) {
-        locationText.isVisible = true
-        conditionView.isVisible = true
-        progressBar.isVisible = false
-        locationText.text = locationName
-        conditionImageView.setImageDrawable(conditionIcon)
-        conditionTitleView.text = conditionTitle
-        conditionDateView.text = conditionDate
-        conditionTemperatureView.text = conditionTemp
-        windSpeedTextView.text = windSpeedText
-        feelsLikeTextView.text = feelsLikeText
-        humidityLayout.isVisible = !BuildConfig.IS_LITE
-        pressureLayout.isVisible = !BuildConfig.IS_LITE
-        humidityTextView.text = humidityText
-        pressureTextView.text = pressureText
-      }
+      locationText.isVisible = true
+      conditionView.isVisible = true
+      progressBar.isVisible = false
+      locationText.text = locationName
+      conditionImageView.setImageDrawable(conditionIcon)
+      conditionTitleView.text = conditionTitle
+      conditionDateView.text = conditionDate
+      conditionTemperatureView.text = conditionTemp
+      windSpeedTextView.text = windSpeedText
+      feelsLikeTextView.text = feelsLikeText
+      humidityLayout.isVisible = !BuildConfig.IS_LITE
+      pressureLayout.isVisible = !BuildConfig.IS_LITE
+      humidityTextView.text = humidityText
+      pressureTextView.text = pressureText
 
       // TODO: Handle network failure
       val forecastResponse: HourlyForecastResponse =
         // TODO: Get user's location
         webService.getHourlyForecastForLocation("-37.8197304", "144.9516833")
 
-      withContext(Dispatchers.Main) {
-        val forecasts: MutableList<HourlyForecast> = mutableListOf()
+      val forecasts: MutableList<HourlyForecast> = mutableListOf()
 
-        for (forecast in forecastResponse.hourly) {
-          if (BuildConfig.IS_LITE && forecasts.size > 5) break
-          forecasts.add(forecast)
-        }
-
-        val adapter = WeatherArrayAdapter(forecasts)
-        val layoutManager = LinearLayoutManager(applicationContext)
-        layoutManager.orientation = LinearLayoutManager.HORIZONTAL
-        forecastRecyclerView.layoutManager = layoutManager
-        forecastRecyclerView.adapter = adapter
+      for (forecast in forecastResponse.hourly) {
+        if (BuildConfig.IS_LITE && forecasts.size > 5) break
+        forecasts.add(forecast)
       }
+
+      val adapter = WeatherArrayAdapter(forecasts)
+      val layoutManager = LinearLayoutManager(applicationContext)
+      layoutManager.orientation = LinearLayoutManager.HORIZONTAL
+      forecastRecyclerView.layoutManager = layoutManager
+      forecastRecyclerView.adapter = adapter
     }
   }
 
   companion object {
-    internal var iconCache: MutableMap<String, Drawable?> = mutableMapOf()
+    private var iconCache: MutableMap<String, Drawable?> = mutableMapOf()
 
     @SuppressLint("UseCompatLoadingForDrawables")
     fun getIcon(context: Context, id: String): Drawable {
