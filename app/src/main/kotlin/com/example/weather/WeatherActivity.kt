@@ -121,11 +121,14 @@ class WeatherActivity : AppCompatActivity(), CoroutineScope {
         webService.getHourlyForecastForLocation("-37.8197304", "144.9516833")
 
       withContext(Dispatchers.Main) {
-        val fullForecast: List<HourlyForecast> = forecastResponse.hourly
-        val liteForecast: List<HourlyForecast> = fullForecast.take(5)
-        val forecast: List<HourlyForecast> = if (BuildConfig.IS_LITE) liteForecast else fullForecast
-        val adapter = WeatherArrayAdapter(forecast)
+        val forecasts: MutableList<HourlyForecast> = mutableListOf()
 
+        for (forecast in forecastResponse.hourly) {
+          if (BuildConfig.IS_LITE && forecasts.size > 5) break
+          forecasts.add(forecast)
+        }
+
+        val adapter = WeatherArrayAdapter(forecasts)
         val layoutManager = LinearLayoutManager(applicationContext)
         layoutManager.orientation = LinearLayoutManager.HORIZONTAL
         forecastRecyclerView.layoutManager = layoutManager
