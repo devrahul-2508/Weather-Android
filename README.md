@@ -2,6 +2,11 @@
 
 A simple app to show some weather info
 
+## Issues
+
+This project has a number of issues. Head over to [issues](https://github.com/Gridstone/Weather-Android/issues) to find
+out more
+
 ## Design
 
 Design courtesy of [Muhammad Noufal](https://dribbble.com/muhammad_noufal))
